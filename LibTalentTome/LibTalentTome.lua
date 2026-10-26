@@ -88,7 +88,7 @@ end
 --- @field public UnregisterCallback fun(owner: table|string, event: LibTalentTome.CallbackEvent)
 --- @field public UnregisterAllCallbacks fun(owner: table|string)
 --- @field private provider LibTalentTome.Provider?
-local LibTalentTome = LibStub:NewLibrary("LibTalentTome", 2)
+local LibTalentTome = LibStub:NewLibrary("LibTalentTome", 3)
 if LibTalentTome == nil then
 	return
 end
@@ -139,7 +139,7 @@ local cache = {
 	pvpTalentSpecializationMap = {}
 }
 
---- @type LibTalentTome.PveTalentCache&LibTalentTome.PvpTalentCache
+--- @type LibTalentTome.PveTalentCache&LibTalentTome.PvpTalentCache&{ pveTalentsInitialized: boolean, pvpTalentsInitialized: boolean }
 local activeCache = {
 	--- @type LibTalentTome.ActiveTalent[]
 	pveTalents = {},
@@ -150,6 +150,8 @@ local activeCache = {
 	--- @type table<string, LibTalentTome.ActiveTalent>
 	pveTalentsByName = {},
 
+	pveTalentsInitialized = false,
+
 	--- @type LibTalentTome.ActiveTalent[]
 	pvpTalents = {},
 
@@ -158,6 +160,8 @@ local activeCache = {
 
 	--- @type table<string, LibTalentTome.ActiveTalent>
 	pvpTalentsByName = {},
+
+	pvpTalentsInitialized = false,
 }
 
 --- @type table<LibTalentTome.TalentSystem, FrameEvent[]>
@@ -684,6 +688,16 @@ function LibTalentTome:GetPvpTalentById(id)
 	return nil
 end
 
+--- @return boolean
+function LibTalentTome:AreTalentsInitialized()
+	return activeCache.pveTalentsInitialized
+end
+
+--- @return boolean
+function LibTalentTome:ArePvpTalentsInitialized()
+	return activeCache.pvpTalentsInitialized
+end
+
 --- Get a list of talents that the player has currently selected.
 ---
 --- @return LibTalentTome.ActiveTalent[]
@@ -705,7 +719,12 @@ end
 --- @param talentId integer
 --- @return LibTalentTome.ActiveTalent?
 function LibTalentTome:GetActiveTalentById(talentId)
-	return CopyTable(activeCache.pveTalentsById[talentId])
+	local result = activeCache.pveTalentsById[talentId]
+	if result == nil then
+		return nil
+	end
+
+	return CopyTable(result)
 end
 
 --- Get the active PvP talent with the given ID.
@@ -715,7 +734,12 @@ end
 --- @param talentId integer
 --- @return LibTalentTome.ActiveTalent?
 function LibTalentTome:GetActivePvpTalentById(talentId)
-	return CopyTable(activeCache.pvpTalentsById[talentId])
+	local result = activeCache.pvpTalentsById[talentId]
+	if result == nil then
+		return nil
+	end
+
+	return CopyTable(result)
 end
 
 --- Get the active talent with the given name.
@@ -725,7 +749,12 @@ end
 --- @param name string
 --- @return LibTalentTome.ActiveTalent?
 function LibTalentTome:GetActiveTalentByName(name)
-	return CopyTable(activeCache.pveTalentsByName[name])
+	local result = activeCache.pveTalentsByName[name]
+	if result == nil then
+		return nil
+	end
+
+	return CopyTable(result)
 end
 
 --- Get the active PvP talent with the given name.
@@ -735,7 +764,12 @@ end
 --- @param name string
 --- @return LibTalentTome.ActiveTalent?
 function LibTalentTome:GetActivePvpTalentByName(name)
-	return CopyTable(activeCache.pvpTalentsByName[name])
+	local result = activeCache.pvpTalentsByName[name]
+	if result == nil then
+		return nil
+	end
+
+	return CopyTable(result)
 end
 
 --- @private
@@ -1179,6 +1213,7 @@ local function RefreshActiveTalentCache()
 		activeCache.pveTalents = pveTalents.pveTalents
 		activeCache.pveTalentsById = pveTalents.pveTalentsById
 		activeCache.pveTalentsByName = pveTalents.pveTalentsByName
+		activeCache.pveTalentsInitialized = true
 	end
 
 	if pvpTalents ~= nil then
@@ -1199,6 +1234,7 @@ local function RefreshActiveTalentCache()
 		activeCache.pvpTalents = pvpTalents.pvpTalents
 		activeCache.pvpTalentsById = pvpTalents.pvpTalentsById
 		activeCache.pvpTalentsByName = pvpTalents.pvpTalentsByName
+		activeCache.pvpTalentsInitialized = true
 	end
 
 	if pveTalentsChanged then
